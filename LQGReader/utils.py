@@ -9,6 +9,20 @@ def equivalent_sets(setA, setB, **kwargs):
     pass
 
 
+def list_to_str(l, sep='\t\t', decimals=5, width=8):
+    out_str = ""
+    for (index, val) in enumerate(l):
+        if isinstance(val, int):
+            out_str += f"{val:{width}}"
+        else:
+            out_str += f"{val:{width}.{decimals}f}"
+        
+        if index + 1 < len(l):
+            out_str += sep
+     
+    return out_str
+
+
 # Positions
 def compute_unit_cell_position(position: np.ndarray) -> np.ndarray:
     return normalize(position)
@@ -16,7 +30,7 @@ def compute_unit_cell_position(position: np.ndarray) -> np.ndarray:
 
 def compute_shift_position(position: np.ndarray):
     unit_cell_position = compute_unit_cell_position(position=position)
-    shift = np.rint(position - unit_cell_position)
+    shift = np.round(position - unit_cell_position).astype(int)
 
     return (unit_cell_position, shift)
 
@@ -28,4 +42,3 @@ def periodic_diff(p1: np.ndarray, p2: np.ndarray) -> np.ndarray:
     min_diff = np.minimum(diff1, diff2)
 
     return min_diff
-

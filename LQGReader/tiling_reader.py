@@ -3,6 +3,7 @@ Positions are always relative, unless specified to be global.
 """
 from __future__ import annotations
 
+import os
 import itertools
 import json
 
@@ -678,7 +679,6 @@ class Tiling:
             basis=basis,
             epsilon=1e-2
         )
-        print(node_list)
 
         edge_list = EdgeList.build_from_json(
             face_dict_list=face_dict_list,
@@ -687,7 +687,6 @@ class Tiling:
             epsilon_center=1e-2,
             epsilon_vector=1e-2,
         )
-        print(edge_list)
 
         face_list = FaceList.build_from_json(
             face_dict_list=face_dict_list,
@@ -697,7 +696,6 @@ class Tiling:
             epsilon_center=1e-2,
             epsilon_vector=1e-2,
         )
-        print(face_list)
 
         tiles_dict = {}
         for face_dict in face_dict_list:
@@ -731,9 +729,52 @@ class Tiling:
 
         return new_tiling
     
-    def to_tqg(self, save_path) -> NoneType:
-        
-        pass
+    def to_tqg(self, save_dir, fname, sep="\t", decimals=5, width=8) -> NoneType:
+        save_path = os.path.join(save_dir, f"{fname}.til")
+        save_file = open(save_path, 'w')
+
+        save_file.write("TIL\n")
+
+        save_file.write(f"NAME{sep}{self.name}\n")
+
+        save_file.write(f"BASIS\n")
+        for basis_vec in self.basis:
+            save_file.write(f"{utils.list_to_str(basis_vec, decimals=decimals, width=width)}".strip() + "\n")
+        save_file.write("END_BASIS\n")
+
+        save_file.write(f"NODES{sep}{len(self.node_list.node_list)}\n")
+        for node in self.node_list.node_list:
+            save_file.write(f"NODE{sep}{node.id}\n")
+            save_file.write(f"{utils.list_to_str(node.get_position(), sep=sep, decimals=decimals, width=width)}".strip() + '\n')
+            save_file.write("END_NODE\n")
+        save_file.write("END_NODES\n")
+
+        save_file.write(f"EDGES{sep}{len(self.edge_list.edge_list)}\n")
+        for edge in self.edge_list.edge_list:
+            save_file.write(f"EDGE{sep}{edge.id}\n")
+            save_file.write(f"{edge.shift_node_A.node.id}{sep}{utils.list_to_str(edge.shift_node_A.shift, sep=sep, decimals=0, width=3)}\n")
+            save_file.write(f"{edge.shift_node_B.node.id}{sep}{utils.list_to_str(edge.shift_node_B.shift, sep=sep, decimals=0, width=3)}\n")
+            save_file.write("END_EDGE\n")
+        save_file.write("END_EDGES\n")
+
+        save_file.write(f"FACES{sep}{len(self.face_list.face_list)}\n")
+        for face in self.face_list.face_list:
+            save_file.write(f"FACE{sep}{face.id}{sep}{len(face.shift_edge_list)}\n")
+            for shift_edge in face.shift_edge_list:
+                save_file.write(f"{shift_edge.edge.id}{sep}{utils.list_to_str(shift_edge.shift, sep=sep, decimals=decimals, width=width)}\n")
+            save_file.write("END_FACE\n")
+        save_file.write("END_FACES\n")
+
+        save_file.write(f"TILES{sep}{len(self.tiles)}\n")
+        for tile in self.tiles:
+            save_file.write(f"TILE{sep}{tile.id}{sep}{len(tile.shift_face_list)}\n")
+            for shift_face in tile.shift_face_list:
+                save_file.write(f"{shift_face.face.id}{sep}{utils.list_to_str(shift_face.shift, sep=sep, decimals=decimals, width=width)}\n")
+            save_file.write("END_TILE\n")
+        save_file.write("END_TILES\n")
+
+        save_file.write("END_TIL\n")
+        save_file.close()
     
     def __repr__(self,) -> str:
         str_rep = "Tiling\n"
@@ -747,14 +788,17 @@ class Tiling:
 
 
 def test():
-    with open('/Users/joshgoldman/Documents/Research/AI4ChemS/LQGReader/LQGReader/sample_data/abw.json', 'r') as f:
+    with open('/Users/joshgoldman/Documents/Research/AI4ChemS/LQGReader/LQGReader/sample_data/ael.json', 'r') as f:
         json_tiling = json.load(f)
 
     tiling = Tiling.build_from_json_face_dict_list(
         json_tiling=json_tiling
     )
 
-    print(tiling)
+    tiling.to_tqg(
+        save_dir='/Users/joshgoldman/Documents/Research/AI4ChemS/LQGReader/LQGReader/sample_data/',
+        fname='ael'
+    )
 
 
 if __name__ == "__main__":
